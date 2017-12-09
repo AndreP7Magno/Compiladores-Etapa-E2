@@ -1,5 +1,15 @@
 grammar Gramatica;
 
+/*
+Programa: Declarações de funções e uma função main SEMPRE
+
+def fun x = x + 1
+
+def main =
+  let x = read_int
+  in
+     print concat "Resultado" (string (fun x))
+*/
 @header{
 using System;
 using System.Collections.Generic;
@@ -86,11 +96,11 @@ custom_type_name
     ;
 
 // // Tipos Básicos da Linguagem
-basic_type
-    :   'char'
-    |   'int'
-    |   'bool'
-    |   'float'
+basic_type returns [string tipo]
+    :   'char' {$tipo = "char";}
+    |   'int' {$tipo = "int";}
+    |   'bool'{$tipo = "bool";}
+    |   'float'{$tipo = "float";}
     ;
 
 // Nome de Função
@@ -176,7 +186,7 @@ class_ctor
         name=symbol tuple_ctor
     ;
 
-metaexpr returns [ string tipo ]
+metaexpr returns [ string tipo, string ctipo ]
     : '(' funcbody ')'                            #me_exprparens_rule     // Anything in parenthesis -- if, let, funcion call, etc
     | tuple_ctor                                  #me_tup_create_rule     // tuple creation
     | class_ctor                                  #me_class_ctor_rule     // create a class from
@@ -185,7 +195,17 @@ metaexpr returns [ string tipo ]
     | TOK_NEG '(' funcbody ')'                    #me_boolnegparens_rule  // or anything in between ( )
     | l=metaexpr op=TOK_CONCAT r=metaexpr         #me_listconcat_rule     // Sequence concatenation
     | l=metaexpr op=TOK_DIV_OR_MUL r=metaexpr 
-	{
+	{	
+		if($l.ctipo == "float" || $l.ctipo == "int" || $l.ctipo == "char")
+			{$tipo = $l.ctipo;
+			$ctipo = $l.ctipo;
+			}
+		else
+		if( $r.ctipo == "float" || $r.ctipo == "int" || $r.ctipo == "char"){
+			$tipo = $r.ctipo;
+			$ctipo = $r.ctipo;
+			}
+		else{
 		if($l.tipo == $r.tipo)
 			$tipo = $l.tipo;
 		else if($l.tipo == "float" && $r.tipo == "int" || $l.tipo == "int" && $r.tipo == "float")
@@ -194,10 +214,19 @@ metaexpr returns [ string tipo ]
 			$tipo = "int";
 		else if($l.tipo == "float" && $r.tipo == "char" || $l.tipo == "char" && $r.tipo == "float")
 			$tipo = "float";
-	
+		}
 	}     #me_exprmuldiv_rule     // Div, Mult and mod are equal
     | l=metaexpr op=TOK_PLUS_OR_MINUS r=metaexpr
-    {
+    {	if($l.ctipo == "float" || $l.ctipo == "int" || $l.ctipo == "char")
+			{$tipo = $l.ctipo;
+			$ctipo = $l.ctipo;
+			}
+		else
+		if( $r.ctipo == "float" || $r.ctipo == "int" || $r.ctipo == "char"){
+			$tipo = $r.ctipo;
+			$ctipo = $r.ctipo;
+			}
+		else{
 		if($l.tipo == $r.tipo)
 			$tipo = $l.tipo;
 		else if($l.tipo == "float" && $r.tipo == "int" || $l.tipo == "int" && $r.tipo == "float")
@@ -206,6 +235,7 @@ metaexpr returns [ string tipo ]
 			$tipo = "int";
 		else if($l.tipo == "float" && $r.tipo == "char" || $l.tipo == "char" && $r.tipo == "float")
 			$tipo = "float";
+		}
 	}  #me_exprplusminus_rule  // Sum and Sub are equal
     | l=metaexpr TOK_CMP_GT_LT r=metaexpr   
 	{
@@ -230,7 +260,7 @@ metaexpr returns [ string tipo ]
     | symbol                                      #me_exprsymbol_rule     // a single symbol
     | literal                        {$tipo = $literal.tipo;}             #me_exprliteral_rule    // literal value
     | funcall                                     #me_exprfuncall_rule    // a funcion call
-    | cast                                        #me_exprcast_rule       // cast a type to other
+    | cast  {$ctipo = $cast.tipo;}                                      #me_exprcast_rule       // cast a type to other
     ;
 
 // Criação de sequência:
@@ -266,8 +296,8 @@ funcall_params_cont
 // Cast
 // int b
 // char 65
-cast
-  : c=basic_type funcbody #cast_rule
+cast returns [string tipo]
+  : c=basic_type funcbody #cast_rule {$tipo = $c.tipo;}
   ;
 
 literal returns [string tipo]
