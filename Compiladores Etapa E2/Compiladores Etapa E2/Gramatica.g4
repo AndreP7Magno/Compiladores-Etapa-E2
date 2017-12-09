@@ -188,24 +188,24 @@ metaexpr returns [ string tipo ]
 	{
 		if($l.tipo == $r.tipo)
 			$tipo = $l.tipo;
-		else if($l.tipo == "float" && $r.tipo == "int")
-			$tipo = $l.tipo;
-		else if($l.tipo == "char" && $r.tipo == "int")
-			$tipo = $r.tipo;
-		else if($l.tipo == "float" && $r.tipo == "char")
-			$tipo = $l.tipo;
+		else if($l.tipo == "float" && $r.tipo == "int" || $l.tipo == "int" && $r.tipo == "float")
+			$tipo = "float";
+		else if($l.tipo == "char" && $r.tipo == "int" || $l.tipo == "int" && $r.tipo == "char")
+			$tipo = "int";
+		else if($l.tipo == "float" && $r.tipo == "char" || $l.tipo == "char" && $r.tipo == "float")
+			$tipo = "float";
 	
 	}     #me_exprmuldiv_rule     // Div, Mult and mod are equal
     | l=metaexpr op=TOK_PLUS_OR_MINUS r=metaexpr
     {
 		if($l.tipo == $r.tipo)
 			$tipo = $l.tipo;
-		else if($l.tipo == "float" && $r.tipo == "int")
-			$tipo = $l.tipo;
-		else if($l.tipo == "char" && $r.tipo == "int")
-			$tipo = $r.tipo;
-		else if($l.tipo == "float" && $r.tipo == "char")
-			$tipo = $l.tipo;
+		else if($l.tipo == "float" && $r.tipo == "int" || $l.tipo == "int" && $r.tipo == "float")
+			$tipo = "float";
+		else if($l.tipo == "char" && $r.tipo == "int" || $l.tipo == "int" && $r.tipo == "char")
+			$tipo = "int";
+		else if($l.tipo == "float" && $r.tipo == "char" || $l.tipo == "char" && $r.tipo == "float")
+			$tipo = "float";
 	}  #me_exprplusminus_rule  // Sum and Sub are equal
     | l=metaexpr TOK_CMP_GT_LT r=metaexpr   
 	{
