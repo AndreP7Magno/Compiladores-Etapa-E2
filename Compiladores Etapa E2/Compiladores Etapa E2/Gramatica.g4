@@ -123,7 +123,12 @@ funcbody
     |   'let' letlist
         'in' fnested=funcbody
         #fbody_let_rule
-    |   metaexpr {Console.WriteLine($metaexpr.tipo);}
+    |   metaexpr {
+			if($metaexpr.ctipo == "float" || $metaexpr.ctipo == "char" || $metaexpr.ctipo == "int")
+			Console.WriteLine($metaexpr.ctipo);
+			else
+			Console.WriteLine($metaexpr.tipo);
+		}
         #fbody_expr_rule
   ;
 
@@ -186,6 +191,7 @@ class_ctor
         name=symbol tuple_ctor
     ;
 
+//Retorna tipos, para a função chamadora
 metaexpr returns [ string tipo, string ctipo ]
     : '(' funcbody ')'                            #me_exprparens_rule     // Anything in parenthesis -- if, let, funcion call, etc
     | tuple_ctor                                  #me_tup_create_rule     // tuple creation
@@ -194,49 +200,50 @@ metaexpr returns [ string tipo, string ctipo ]
     | TOK_NEG symbol                              #me_boolneg_rule        // Negate a variable
     | TOK_NEG '(' funcbody ')'                    #me_boolnegparens_rule  // or anything in between ( )
     | l=metaexpr op=TOK_CONCAT r=metaexpr         #me_listconcat_rule     // Sequence concatenation
-    | l=metaexpr op=TOK_DIV_OR_MUL r=metaexpr 
-	{	
-		if($l.ctipo == "float" || $l.ctipo == "int" || $l.ctipo == "char")
-			{$tipo = $l.ctipo;
-			$ctipo = $l.ctipo;
-			}
-		else
-		if( $r.ctipo == "float" || $r.ctipo == "int" || $r.ctipo == "char"){
-			$tipo = $r.ctipo;
-			$ctipo = $r.ctipo;
-			}
-		else{
+    |
+	 l=metaexpr op=TOK_DIV_OR_MUL r=metaexpr 
+	{
 		if($l.tipo == $r.tipo)
 			$tipo = $l.tipo;
-		else if($l.tipo == "float" && $r.tipo == "int" || $l.tipo == "int" && $r.tipo == "float")
+		else if(($l.tipo == "float" && $r.tipo == "int") || ($l.tipo == "int" && $r.tipo == "float"))
 			$tipo = "float";
-		else if($l.tipo == "char" && $r.tipo == "int" || $l.tipo == "int" && $r.tipo == "char")
+		else if(($l.tipo == "char" && $r.tipo == "int") || ($l.tipo == "int" && $r.tipo == "char"))
 			$tipo = "int";
-		else if($l.tipo == "float" && $r.tipo == "char" || $l.tipo == "char" && $r.tipo == "float")
+		else if(($l.tipo == "float" && $r.tipo == "char") || ($l.tipo == "char" && $r.tipo == "float"))
 			$tipo = "float";
-		}
-	}     #me_exprmuldiv_rule     // Div, Mult and mod are equal
-    | l=metaexpr op=TOK_PLUS_OR_MINUS r=metaexpr
-    {	if($l.ctipo == "float" || $l.ctipo == "int" || $l.ctipo == "char")
-			{$tipo = $l.ctipo;
+
+		if($l.ctipo == $r.ctipo)
 			$ctipo = $l.ctipo;
-			}
-		else
-		if( $r.ctipo == "float" || $r.ctipo == "int" || $r.ctipo == "char"){
-			$tipo = $r.ctipo;
-			$ctipo = $r.ctipo;
-			}
-		else{
+		else if(($l.ctipo == "float" && $r.ctipo == "int") || ($l.ctipo == "int" && $r.ctipo == "float"))
+			$ctipo = "float";
+		else if(($l.ctipo == "char" && $r.ctipo == "int") || ($l.ctipo == "int" && $r.ctipo == "char"))
+			$ctipo = "int";
+		else if(($l.ctipo == "float" && $r.ctipo == "char") || ($l.ctipo == "char" && $r.ctipo == "float"))
+			$ctipo = "float";
+		}
+	    #me_exprmuldiv_rule     // Div, Mult and mod are equal
+    | 
+	l=metaexpr op=TOK_PLUS_OR_MINUS r=metaexpr
+    {	
 		if($l.tipo == $r.tipo)
 			$tipo = $l.tipo;
-		else if($l.tipo == "float" && $r.tipo == "int" || $l.tipo == "int" && $r.tipo == "float")
+		else if(($l.tipo == "float" && $r.tipo == "int") || ($l.tipo == "int" && $r.tipo == "float"))
 			$tipo = "float";
-		else if($l.tipo == "char" && $r.tipo == "int" || $l.tipo == "int" && $r.tipo == "char")
+		else if(($l.tipo == "char" && $r.tipo == "int") || ($l.tipo == "int" && $r.tipo == "char"))
 			$tipo = "int";
-		else if($l.tipo == "float" && $r.tipo == "char" || $l.tipo == "char" && $r.tipo == "float")
+		else if(($l.tipo == "float" && $r.tipo == "char") || ($l.tipo == "char" && $r.tipo == "float"))
 			$tipo = "float";
+
+		if($l.ctipo == $r.ctipo)
+			$ctipo = $l.ctipo;
+		else if(($l.ctipo == "float" && $r.ctipo == "int") || ($l.ctipo == "int" && $r.ctipo == "float"))
+			$ctipo = "float";
+		else if(($l.ctipo == "char" && $r.ctipo == "int") || ($l.ctipo == "int" && $r.ctipo == "char"))
+			$ctipo = "int";
+		else if(($l.ctipo == "float" && $r.ctipo == "char") || ($l.ctipo == "char" && $r.ctipo == "float"))
+			$ctipo = "float";
 		}
-	}  #me_exprplusminus_rule  // Sum and Sub are equal
+  #me_exprplusminus_rule  // Sum and Sub are equal
     | l=metaexpr TOK_CMP_GT_LT r=metaexpr   
 	{
 		$tipo = "bool";
@@ -297,9 +304,10 @@ funcall_params_cont
 // int b
 // char 65
 cast returns [string tipo]
-  : c=basic_type funcbody #cast_rule {$tipo = $c.tipo;}
+  : c=basic_type funcbody {$tipo = $c.tipo;} #cast_rule 
   ;
 
+// Se a entrada for do x tipo recebido retorna o tipo
 literal returns [string tipo]
     :   'nil'              #literalnil_rule
     |   ('true' | 'false') #literaltrueorfalse_rule
